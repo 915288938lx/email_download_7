@@ -1,0 +1,24 @@
+Sun, 8 Mar 2015 21:25:23 +0800
+Tue, 17 Mar 2015 10:37:05 +0800          1003 有问题
+Tue, 17 Mar 2015 10:27:24 +0800         1002 正常
+Tue, 5 May 2015 17:37:07 +0800          1041 有问题 :invalid continuation byte .utf-8无法decode...
+                                        467 封邮件有问题, 日期无法转换
+                                        515 封邮件, 标题用 在第3次尝试后, 用windows-1256字符集解码邮件成功 sosoç™¾ç§‘é‚®ن»¶وڈگé†’
+                                        558 封邮件, 在第3次尝试后, 用windows-1256字符集解码邮件成功 è…¾è®¯QQç»؟é’»è´µو—ڈé€ڑçں¥
+                                        578 封邮件    =?GB2312?B?ob5DU0ROyefH+Nbcv6+hv7Xatv7G2qO6s8zQ8tSxw+bK1NautcDWrr/swNax4LPMtcS6w8+wud/T	0MTE0Kmjvw==?=
+2013-10-24 06:00:09 +0800                                        597 封邮件 TypeError: Tuple or struct_time argument required  非rfc2822
+                                        第4封可以解码, 但是date为空  adress为:
+subject为:None
+日期为:None
+Traceback (most recent call last):
+  File "G:/PycharmProjects/untitled/parse_emai.py", line 62, in <module>
+    print('date为:%s'%ood_parse_date(date_))
+  File "G:/PycharmProjects/untitled/parse_emai.py", line 49, in ood_parse_date
+    send_date_str = ''.join(re.findall('.*?([1,2]{1}[0,9]{1}[0-9]{2})[/-]([0,1]{1}[0-9]{1})[/-]([0-3]{1}[0-9]{1}).*?', date_)[0])
+  File "C:\Users\Administrator\AppData\Local\Programs\Python\Python35\lib\re.py", line 213, in findall
+    return _compile(pattern, flags).findall(string)
+TypeError: expected string or bytes-like object
+
+
+
+1044封无法下载
