@@ -12,7 +12,7 @@ pop = poplib.POP3_SSL('pop.qq.com')
 pop.user('915288938@qq.com')
 pop.pass_('fshsnxoporssbbja')
 list = pop.list()
-lines = pop.retr(1553)[1]
+lines = pop.retr(913)[1]
 # print(b'\r\n'.join(lines).decode('gb2312'))
 # for line in lines:
 #     print(lines)
