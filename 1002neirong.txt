@@ -8,6 +8,7 @@ Tue, 5 May 2015 17:37:07 +0800          1041 有问题 :invalid continuation byt
                                         578 封邮件    =?GB2312?B?ob5DU0ROyefH+Nbcv6+hv7Xatv7G2qO6s8zQ8tSxw+bK1NautcDWrr/swNax4LPMtcS6w8+wud/T	0MTE0Kmjvw==?=
 2013-10-24 06:00:09 +0800                                        597 封邮件 TypeError: Tuple or struct_time argument required  非rfc2822
                                         第4封可以解码, 但是date为空  adress为:
+                                        第223封邮件
 subject为:None
 日期为:None
 Traceback (most recent call last):

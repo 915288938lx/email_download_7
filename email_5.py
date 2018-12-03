@@ -15,26 +15,7 @@ import xlrd
 charset_collect = ['gb2312', 'gb18030', 'gbk', 'iso-8859-2', 'big5', 'iso-8859-6', 'iso-8859-4', 'iso-8859-5',
                    'iso-8859-7', 'utf-16', 'iso-8859-1', 'iso-2022-kr', 'iso-8859-3', 'iso-2022-jp', 'iso-2022-jp',
                    'iso-8859-15', 'iso-8859-9',
-                   'iso-8859-8-i', 'iso-8859-8', 'unicode', 'csISO2022JP', 'x-Chinese-CNS', 'us-ascii',
-                   'x-Chinese-Eten', 'x-mac-chinesetrad', 'macintosh', 'ibm857', 'windows-1254', 'windows-1258',
-                   'Windows-1252', 'windows-874', 'hz-gb-2312', 'windows-1256', 'ibm775', 'windows-1257', 'ibm852',
-                   'x-mac-ce', 'windows-1250', 'EUC-CN', 'x-mac-chinesesimp', 'cp866', 'koi8-r', 'koi8-u',
-                   'x-mac-cyrillic', 'windows-1251', 'x-Europa', 'x-IA5-German', 'ibm737', 'x-mac-greek',
-                   'windows-1253', 'ibm869', 'DOS-862', 'x-mac-hebrew', 'windows-1255', 'ASMO-708', 'DOS-720',
-                   'x-mac-arabic', 'x-EBCDIC-Arabic', 'x-EBCDIC-CyrillicRussian', 'x-EBCDIC-CyrillicSerbianBulgarian',
-                   'x-EBCDIC-DenmarkNorway', 'x-ebcdic-denmarknorway-euro', 'x-EBCDIC-FinlandSweden',
-                   'x-ebcdic-finlandsweden-euro', 'x-ebcdic-finlandsweden-euro', 'x-ebcdic-france-euro',
-                   'x-EBCDIC-Germany', 'x-ebcdic-germany-euro', 'x-EBCDIC-GreekModern', 'x-EBCDIC-Greek',
-                   'x-EBCDIC-Hebrew', 'x-EBCDIC-Icelandic', 'x-ebcdic-icelandic-euro', 'x-ebcdic-international-euro',
-                   'x-EBCDIC-Italy', 'x-ebcdic-italy-euro', 'x-EBCDIC-JapaneseAndKana',
-                   'x-EBCDIC-JapaneseAndJapaneseLatin', 'x-EBCDIC-JapaneseAndUSCanada', 'x-EBCDIC-JapaneseKatakana',
-                   'x-EBCDIC-KoreanAndKoreanExtended', 'x-EBCDIC-KoreanExtended', 'CP870', 'x-EBCDIC-SimplifiedChinese',
-                   'X-EBCDIC-Spain', 'x-ebcdic-spain-euro', 'x-EBCDIC-Thai', 'x-EBCDIC-TraditionalChinese', 'CP1026',
-                   'x-EBCDIC-Turkish', 'x-EBCDIC-UK', 'x-ebcdic-uk-euro', 'ebcdic-cp-us', 'x-ebcdic-cp-us-euro',
-                   'ibm861', 'x-mac-icelandic', 'x-iscii-as', 'x-iscii-be', 'x-iscii-de', 'x-iscii-gu', 'x-iscii-ka',
-                   'x-iscii-ma', 'x-iscii-or', 'x-iscii-pa', 'x-iscii-ta', 'x-iscii-te', 'euc-jp', 'x-mac-japanese',
-                   'shift_jis', 'ks_c_5601-1987', 'euc-kr', 'Johab', 'x-mac-korean', 'x-IA5-Norwegian', 'IBM437',
-                   'x-IA5-Swedish', 'x-mac-turkish', 'unicodeFFFE', 'utf-7', 'ibm850', 'x-IA5']
+                   'iso-8859-8-i', 'iso-8859-8']
 address_list = ['tg.gtja.com', 'chinastock.com.cn', 'swhysc.com', 'stocke.com.cn', 'orientsec.com.cn', 'citics.com',
                 'cmschina.com.cn', 'gfund.com', 'service.pingan.com', 'crctrust.com', 'cifutures.com.cn', 'htfc.com']
 
@@ -124,22 +105,22 @@ def binary_search(mail_count_num, request_date):
     start = 1
     n = 0
     end = mail_count_num
+    retrived_date = ''
     while start <= end:
-        print('处理中...')
+        print('\n%s' % n)
         n = n + 1
         mid = (start + end) // 2
         print('Mid:%s' % mid)
         retrived_date = retrive(pop_conn, mid)[3]
         print('收取到的日期为:%s' % retrived_date)
         if request_date == retrived_date:
-            return mid, n
+            return mid, n, retrived_date
         elif retrived_date > request_date:
             end = mid - 1
         else:
             start = mid + 1
-        print(n)
-    print('在第%s次查找后确认邮件位置...' % n)
-    return start, n
+    print('\n在第%s次查找后确认邮件位置...\n' % n)
+    return start, n, retrived_date
 
 
 # 精确查找表格中匹配目标字符串的第一个单元格,并返回坐标
@@ -199,17 +180,12 @@ def lazy_find_cell_r(open_sheet, excel_str_date):
 
 
 # 下载附件, 解析出日期, 解析出所需的关键单元格
-def download_attachment_parse(subject, msg):
-    try:
-        print('\n邮件标题:%s' % subject.encode('gbk').decode('gbk'))
-    except:
-        print('无法在控制台显示邮件标题')
+def download_attachment_parse(msg):
     global sheet
     for part in msg.walk():
         filename = part.get_filename()
         if filename:
             file_name_, char_ = decode_str(filename)
-
             if re.split('\.', file_name_)[len(re.split('\.', file_name_)) - 1] not in 'xlsx':
                 print('【非excel附件】附件名:%s, 跳过...' % file_name_)
             else:
@@ -225,74 +201,78 @@ def download_attachment_parse(subject, msg):
                     #     os.remove(abs_file_path)  # 非excel附件, 删除
                     #     print('【已删除】附件%s非excel附件, 已删除...' % file_name_)
                     # else:
-                    open_workbook = xlrd.open_workbook(file_name_)  # 打开下载下来的excel
-                    open_sheet = open_workbook.sheet_by_index(0)  # 激活第一个sheet
 
-                    target_values = []
-                    # 获取银行存款
-                    if find_cell_r(open_sheet, '1002') and find_cell_value_r_c(open_sheet, '市值'):
-                        strs_row_bank = find_cell_r(open_sheet, '1002')  # 科目代码为'1002'银行存款的行数
-                        strs_col = find_cell_value_r_c(open_sheet, '市值')[1]  # 市值的列数
-                        strs_bank_value = open_sheet.cell(strs_row_bank,
-                                                          strs_col).value  # 银行存款市值的单元格值****************************************
+                    try:
+                        open_workbook = xlrd.open_workbook(file_name_)  # 打开下载下来的excel
+                    except:
+                        pass
                     else:
-                        strs_bank_value = '未在表格中找到[银行存款市值]'
-                    # 获取单位净值
-                    if lazy_find_cell_value_r_c(open_sheet, '单位净值') and lazy_find_cell_value_r_c(open_sheet, '单位净值'):
-                        strs_net_r = lazy_find_cell_value_r_c(open_sheet, '单位净值')[0]  # 模糊查找单位净值的行数
-                        strs_net_c = lazy_find_cell_value_r_c(open_sheet, '单位净值')[1]  # 模糊查找单位净值的列数
-                        strs_net_value = open_sheet.cell(strs_net_r, strs_net_c).value  # 单位净值的单元格的值
-                    else:
-                        strs_net_value = '未在表格中找到[单位净值]'
-                    # 获取估值日期
-                    if lazy_find_cell_r(open_sheet, '日期'):
+                        open_sheet = open_workbook.sheet_by_index(0)  # 激活第一个sheet
 
-                        strs_date_r = lazy_find_cell_r(open_sheet, '日期')  # 模糊第一列查找日期的行数
-                        strs_date_value = open_sheet.cell(strs_date_r, 0).value  # 获取日期估值日期
-                    else:
-                        strs_date_value = '未在表格中找到[估值日期]'
+                        target_values = []
+                        # 获取银行存款
+                        if find_cell_r(open_sheet, '1002') and find_cell_value_r_c(open_sheet, '市值'):
+                            strs_row_bank = find_cell_r(open_sheet, '1002')  # 科目代码为'1002'银行存款的行数
+                            strs_col = find_cell_value_r_c(open_sheet, '市值')[1]  # 市值的列数
+                            strs_bank_value = open_sheet.cell(strs_row_bank,
+                                                              strs_col).value  # 银行存款市值的单元格值****************************************
+                        else:
+                            strs_bank_value = '未在表格中找到[银行存款市值]'
+                        # 获取单位净值
+                        if lazy_find_cell_value_r_c(open_sheet, '单位净值') and lazy_find_cell_value_r_c(open_sheet, '单位净值'):
+                            strs_net_r = lazy_find_cell_value_r_c(open_sheet, '单位净值')[0]  # 模糊查找单位净值的行数
+                            strs_net_c = lazy_find_cell_value_r_c(open_sheet, '单位净值')[1]  # 模糊查找单位净值的列数
+                            strs_net_value = open_sheet.cell(strs_net_r, strs_net_c).value  # 单位净值的单元格的值
+                        else:
+                            strs_net_value = '未在表格中找到[单位净值]'
+                        # 获取估值日期
+                        if lazy_find_cell_r(open_sheet, '日期'):
 
-                    # 获取存出保证金
-                    if find_cell_r(open_sheet, '1031') and find_cell_value_r_c(open_sheet, '市值'):  # 科目代码为'1031'银行存款的行数
-                        strs_row_secure_cash = find_cell_r(open_sheet, '1031')  # 科目代码为'1031'银行存款的行数
-                        strs_col = find_cell_value_r_c(open_sheet, '市值')[1]  # 市值的列数
-                        strs_secure_cash_value = open_sheet.cell(strs_row_secure_cash,
-                                                                 strs_col).value  # 存出保证金市值的单元格值***********************
-                    else:
-                        strs_secure_cash_value = '未在表格中找到[存出保证金]'
+                            strs_date_r = lazy_find_cell_r(open_sheet, '日期')  # 模糊第一列查找日期的行数
+                            strs_date_value = open_sheet.cell(strs_date_r, 0).value  # 获取日期估值日期
+                        else:
+                            strs_date_value = '未在表格中找到[估值日期]'
 
-                    # 获取产品名称
-                    product_name = file_name_
+                        # 获取存出保证金
+                        if find_cell_r(open_sheet, '1031') and find_cell_value_r_c(open_sheet, '市值'):  # 科目代码为'1031'银行存款的行数
+                            strs_row_secure_cash = find_cell_r(open_sheet, '1031')  # 科目代码为'1031'银行存款的行数
+                            strs_col = find_cell_value_r_c(open_sheet, '市值')[1]  # 市值的列数
+                            strs_secure_cash_value = open_sheet.cell(strs_row_secure_cash,
+                                                                     strs_col).value  # 存出保证金市值的单元格值***********************
+                        else:
+                            strs_secure_cash_value = '未在表格中找到[存出保证金]'
 
-                    # 开始添加单元格值
-                    # target_values.append(strs_date_value) # 估值日期
-                    target_values.append(product_name)  # 产品名称
-                    target_values.append(str(strs_bank_value))  # 银行存款
-                    target_values.append(str(strs_secure_cash_value))  # 存出保证金
-                    target_values.append(strs_net_value)  # 单位净值
+                        # 获取产品名称
+                        product_name = file_name_
 
-                    # 第一列单元格内的日期的提取与标准化
-                    pattern_1 = '.*?([1,2]{1}[0,9]{1}[0-9]{2})[/-]([0,1]{1}[0-9]{1})[/-]([0-3]{1}[0-9]{1}).*?'
-                    pattern_2 = '.*?([1,2]{1}[0,9]{1}[0-9]{2}[0,1]{1}[0-9]{1}[0-3]{1}[0-9]{1}).*?'
-                    re_strs_date_value = ''
-                    if len(re.findall(pattern_1, strs_date_value)) != 0:
-                        re_strs_date_value = ''.join(re.findall(pattern_1, strs_date_value)[0])
-                    else:
-                        if len(re.findall(pattern_2, strs_date_value)) != 0:
-                            re_strs_date_value = re.findall(pattern_2, strs_date_value)[0]
-                    # 释放xlrd资源, 关闭xlrd打开的表格
-                    # open_workbook.release_resources()
-                    # del open_workbook
-                    abs_excel_file_path = os.path.join(os.getcwd(), file_name_)
-                    if re_strs_date_value != request_date:
-                        os.remove(abs_excel_file_path)  #
-                        print('【已删除】附件%s估值日期[%s]不满足所需日期,...' % (file_name_, re_strs_date_value))
-                    # 组装目标值到汇总excel表格里头
-                    else:
-                        print('【已保存】附件%s' % file_name_)
-                        # target_values.append(file_name_)
-                        target_values.append(re_strs_date_value)
-                        sheet.append(target_values)
+                        # 开始添加单元格值
+                        # target_values.append(strs_date_value) # 估值日期
+                        target_values.append(product_name)  # 产品名称
+                        target_values.append(str(strs_bank_value))  # 银行存款
+                        target_values.append(str(strs_secure_cash_value))  # 存出保证金
+                        target_values.append(strs_net_value)  # 单位净值
+
+                        # 第一列单元格内的日期的提取与标准化
+                        pattern_1 = '.*?([1,2]{1}[0,9]{1}[0-9]{2})[/-]([0,1]{1}[0-9]{1})[/-]([0-3]{1}[0-9]{1}).*?'
+                        pattern_2 = '.*?([1,2]{1}[0,9]{1}[0-9]{2}[0,1]{1}[0-9]{1}[0-3]{1}[0-9]{1}).*?'
+                        re_strs_date_value = ''
+                        if len(re.findall(pattern_1, strs_date_value)) != 0:
+                            re_strs_date_value = ''.join(re.findall(pattern_1, strs_date_value)[0])
+                        else:
+                            if len(re.findall(pattern_2, strs_date_value)) != 0:
+                                re_strs_date_value = re.findall(pattern_2, strs_date_value)[0]
+                        # 释放xlrd资源, 关闭xlrd打开的表格
+                        # open_workbook.release_resources()
+                        # del open_workbook
+                        abs_excel_file_path = os.path.join(os.getcwd(), file_name_)
+                        if re_strs_date_value != request_date:
+                            os.remove(abs_excel_file_path)  #
+                            print('【已删除】附件%s估值日期[%s]不满足所需日期,...' % (file_name_, re_strs_date_value))
+                        # 组装目标值到汇总excel表格里头
+                        else:
+                            print('【已保存】附件%s' % file_name_)
+                            target_values.append(re_strs_date_value)
+                            sheet.append(target_values)
 
 
 # 主函数
@@ -321,6 +301,7 @@ if __name__ == '__main__':
 
     # 输入要处理邮件的标题日期
     request_date = input('请输入日期,收取今天邮件直接按回车(日期输入格式为20141213) :')  # 输入日期
+    start = time.clock()
     if request_date == '':
         request_date = today_str
 
@@ -347,37 +328,48 @@ if __name__ == '__main__':
     # 开始遍历
     if request_date == '':
         request_date = today_str
-    if (datetime.datetime.strptime(today_str, '%Y%m%d') - datetime.datetime.strptime(request_date, '%Y%m%d')).days >= 5:
-        retri_num, fzd = binary_search(mail_count_num, request_date)
-        print('开始从第%s封收取...' % retri_num)
-        if mail_count_num - retri_num <= 300:
-            for i in range(retri_num, mail_count_num, 1):
-                print(i)
-                msg, address, subject, send_date = retrive(pop_conn, i)
-                download_attachment_parse(subject, msg)
-        else:
-            for i in range(retri_num, retri_num + 300, 1):
-                print(i)
-                msg, address, subject, send_date = retrive(pop_conn, i)
-                download_attachment_parse(subject, msg)
-            pass
-    else:
-        retri_num, fzd = binary_search(mail_count_num, request_date)
-        print('开始从第%s封收取...' % retri_num)
+    if (datetime.datetime.strptime(today_str, '%Y%m%d') - datetime.datetime.strptime(request_date,
+                                                                                     '%Y%m%d')).days >= 30:
+        retri_num, fzd, retrived_date = binary_search(mail_count_num, request_date)
+        print('开始从第[%s]封收取, 该封邮件收件日期为[%s]...' % (retri_num, retrived_date))
         for i in range(retri_num, mail_count_num, 1):
             print(i)
             msg, address, subject, send_date = retrive(pop_conn, i)
-            download_attachment_parse(subject, msg)
-        # else:
-        #     for i in range(mail_count_num, 0, -1):
-        #         print(i)
-        #         msg, address, subject, send_date = retrive(pop_conn, i)
-        #         download_attachment_parse(subject,msg)
+            print('\n收件日期:[%s]' % send_date)
+            try:
+                print('邮件标题:%s' % subject.encode('gbk').decode('gbk'))
+            except:
+                print('无法在控制台显示邮件标题')
+            if (datetime.datetime.strptime(send_date, '%Y%m%d') - datetime.datetime.strptime(request_date,
+                                                                                             '%Y%m%d')).days >= 5:
+                print('\n--------请求日期未来五天内未没有收到所需邮件--------\n')
+                break
+            else:
+                download_attachment_parse(msg)
 
+    else:
+        retri_num, fzd, retrived_date = binary_search(mail_count_num, request_date)
+        print('开始从第[%s]封收取, 该封邮件收件日期为[%s]...' % (retri_num, retrived_date))
+        for i in range(retri_num, mail_count_num, 1):
+            print(i)
+            msg, address, subject, send_date = retrive(pop_conn, i)
+            print('收件日期:[%s]' % send_date)
+            try:
+                print('邮件标题:%s' % subject.encode('gbk').decode('gbk'))
+            except:
+                print('无法在控制台显示邮件标题')
+            download_attachment_parse(msg)
+            # else:
+            #     for i in range(mail_count_num, 0, -1):
+            #         print(i)
+            #         msg, address, subject, send_date = retrive(pop_conn, i)
+            #         download_attachment_parse(subject,msg)
 
     print('开始创建汇总表...')
     wb.save('%s汇总表.xlsx' % request_date)
-    pop_conn.quit()
+    # pop_conn.quit()
     # print('任务完成, 10秒后将关闭窗口...')
     # time.sleep(10)
     print('===============任务完成===============\n')
+    elapsed_time = time.clock()-start
+    # print(elapsed_time)
